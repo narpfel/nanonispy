@@ -1,4 +1,5 @@
 import os
+
 import numpy as np
 
 _end_tags = dict(grid=':HEADER_END:', scan='SCANIT_END', spec='[DATA]')
@@ -122,6 +123,7 @@ class NanonisFile:
                         )
 
         return byte_offset
+
 
 class Grid(NanonisFile):
 
