@@ -307,6 +307,7 @@ class Scan(NanonisFile):
         # load data
         self.signals = self._load_data()
 
+        self.position = self.header['scan_offset']
     def _load_data(self):
         """
         Read binary data for Nanonis sxm file.
@@ -373,6 +374,10 @@ class Spec(NanonisFile):
         super().__init__(fname)
         self.header = _parse_dat_header(self.header_raw)
         self.signals = self._load_data()
+        self.position = np.array([
+            float(self.header['X (m)']),
+            float(self.header['Y (m)'])
+        ])
 
     def _load_data(self):
         """
