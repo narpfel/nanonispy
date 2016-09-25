@@ -1,3 +1,4 @@
+from datetime import datetime as DateTime
 import os
 
 import numpy as np
@@ -308,6 +309,11 @@ class Scan(NanonisFile):
         self.signals = self._load_data()
 
         self.position = self.header['scan_offset']
+        self.datetime = DateTime.strptime(
+            self.header['rec_date'] + self.header['rec_time'],
+            '%d.%m.%Y%H:%M:%S'
+        )
+
     def _load_data(self):
         """
         Read binary data for Nanonis sxm file.
@@ -378,6 +384,10 @@ class Spec(NanonisFile):
             float(self.header['X (m)']),
             float(self.header['Y (m)'])
         ])
+        self.datetime = DateTime.strptime(
+            self.header['Date'],
+            '%d.%m.%Y %H:%M:%S'
+        )
 
     def _load_data(self):
         """
