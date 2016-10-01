@@ -30,7 +30,7 @@ setup(
     keywords='data science numpy binary file parse',
     packages=['nanonispy', 'nanonispy.tests'],
     package_data={'nanonispy': ['LICENSE', 'README.md'], },
-    install_requires=['numpy', ],
+    install_requires=['numpy', 'lazy-property'],
     tests_require=['nose', 'coverage', ],
     include_package_data=True,
 )

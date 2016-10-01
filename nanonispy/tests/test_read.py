@@ -281,6 +281,14 @@ class TestScanFile(unittest.TestCase):
             f = self.create_dummy_scan_data(suffix='.3ds')
             SF = nap.read.Scan(f.name)
 
+    def test_reads_signals(self):
+        f = self.create_dummy_scan_data()
+        SF = nap.read.Scan(f.name)
+        for channel in SF.header["data_info"]["Name"]:
+            for direction in "forward", "backward":
+                self.assertEqual(SF.signals[channel][direction].shape, (64, 64))
+
+
 class TestSpecFile(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -317,6 +325,13 @@ class TestSpecFile(unittest.TestCase):
             a = ''.join(sorted(str(SP.header[key])))
             b = ''.join(sorted(test_dict[key]))
             self.assertEqual(a, b)
+
+    def test_reads_signals(self):
+        f = self.create_dummy_spec_data()
+        SP = nap.read.Spec(f.name)
+        for signal in SP.signals.values():
+            self.assertEqual(signal.shape, (1023, ))
+
 
 
 class TestUtilFunctions(unittest.TestCase):

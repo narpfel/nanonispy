@@ -22,6 +22,7 @@ Currently written and tested with
 Depends on
 
 - numpy
+- lazy-property (for lazily reading signals)
 
 
 Install

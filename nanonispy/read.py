@@ -3,6 +3,9 @@ import os
 
 import numpy as np
 
+from lazy_property import LazyProperty
+
+
 _end_tags = dict(grid=':HEADER_END:', scan='SCANIT_END', spec='[DATA]')
 
 
@@ -175,11 +178,9 @@ class Grid(NanonisFile):
         _is_valid_file(fname, ext='3ds')
         super().__init__(fname)
         self.header = _parse_3ds_header(self.header_raw)
-        self.signals = self._load_data()
-        self.signals['sweep_signal'] = self._derive_sweep_signal()
-        self.signals['topo'] = self._extract_topo()
 
-    def _load_data(self):
+    @LazyProperty
+    def signals(self):
         """
         Read binary data for Nanonis 3ds file.
 
@@ -218,14 +219,24 @@ class Grid(NanonisFile):
             stop_ind = num_param + (i+1) * num_sweep
             data_dict[chann] = griddata_shaped[:, :, start_ind:stop_ind]
 
+        data_dict['sweep_signal'] = self._derive_sweep_signal(data_dict)
+        data_dict['topo'] = self._extract_topo(data_dict)
+
         return data_dict
 
-    def _derive_sweep_signal(self):
+    def _derive_sweep_signal(self, signals):
         """
         Computer sweep signal.
 
         Based on start and stop points of sweep signal in header, and
         number of sweep signal points.
+
+        Parameters
+        ----------
+        signals : dict
+            This method cannot access `self.signals` as this would lead to
+            infinite recursion when called by the `Grid.signals` lazy property,
+            hence it must be passed as a parameter.
 
         Returns
         -------
@@ -233,12 +244,12 @@ class Grid(NanonisFile):
             1d sweep signal, should be sample bias in most cases.
         """
         # find sweep signal start and end from a given pixel value
-        sweep_start, sweep_end = self.signals['params'][0, 0, :2]
+        sweep_start, sweep_end = signals['params'][0, 0, :2]
         num_sweep_signal = self.header['num_sweep_signal']
 
         return np.linspace(sweep_start, sweep_end, num_sweep_signal, dtype=np.float32)
 
-    def _extract_topo(self):
+    def _extract_topo(self, signals):
         """
         Extract topographic map based on z-controller height at each
         pixel.
@@ -249,13 +260,20 @@ class Grid(NanonisFile):
         general in case the fixed/experimental parameters are not the
         same for other Nanonis users.
 
+        Parameters
+        ----------
+        signals : dict
+            This method cannot access `self.signals` as this would lead to
+            infinite recursion when called by the `Grid.signals` lazy property,
+            hence it must be passed as a parameter.
+
         Returns
         -------
         numpy.ndarray
             Copy of already extracted data to be more easily accessible
             in signals dict.
         """
-        return self.signals['params'][:, :, 4]
+        return signals['params'][:, :, 4]
 
 
 class Scan(NanonisFile):
@@ -305,16 +323,14 @@ class Scan(NanonisFile):
         # data begins with 4 byte code, add 4 bytes to offset instead
         self.byte_offset += 4
 
-        # load data
-        self.signals = self._load_data()
-
         self.position = self.header['scan_offset']
         self.datetime = DateTime.strptime(
             self.header['rec_date'] + self.header['rec_time'],
             '%d.%m.%Y%H:%M:%S'
         )
 
-    def _load_data(self):
+    @LazyProperty
+    def signals(self):
         """
         Read binary data for Nanonis sxm file.
 
@@ -379,7 +395,6 @@ class Spec(NanonisFile):
         _is_valid_file(fname, ext='dat')
         super().__init__(fname)
         self.header = _parse_dat_header(self.header_raw)
-        self.signals = self._load_data()
         self.position = np.array([
             float(self.header['X (m)']),
             float(self.header['Y (m)'])
@@ -389,7 +404,8 @@ class Spec(NanonisFile):
             '%d.%m.%Y %H:%M:%S'
         )
 
-    def _load_data(self):
+    @LazyProperty
+    def signals(self):
         """
         Loads ascii formatted .dat file.
 
