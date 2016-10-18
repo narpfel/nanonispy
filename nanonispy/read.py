@@ -325,7 +325,7 @@ class Scan(NanonisFile):
         """
         channs = list(self.header['data_info']['Name'])
         nchanns = len(channs)
-        nx, ny = self.header['scan_pixels']
+        ny, nx = self.header['scan_pixels']
 
         # assume both directions for now
         ndir = 2
